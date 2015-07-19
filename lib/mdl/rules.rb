@@ -27,28 +27,26 @@ rule "MD003", "Header style" do
   # See http://daringfireball.net/projects/markdown/syntax#header
   tags :headers
   # :style can be one of :consistent, :atx, :atx_closed, :setext
-  params :style => :consistent, :setext_with_atx => true
+  params :style => :consistent
   check do |doc|
-    headers = doc.find_type(:header)
-    elements = doc.find_type_elements(:header)
-    if elements.empty?
+    headers = doc.find_type_elements(:header)
+    if headers.empty?
       nil
     else
       if @params[:style] == :consistent
-        doc_style = doc.header_style(elements.first)
+        doc_style = doc.header_style(headers.first)
       else
         doc_style = @params[:style]
       end
-      elements.map.with_index do |e, i|
-        h = headers[i]
-        if !(@params[:setext_with_atx] and \
-             doc_style == :setext and \
-             doc.header_style(e) == :atx and \
-             h[:level] > 2)
-          doc.element_linenumber(e) \
-          if doc.header_style(e) != doc_style
-        end
-      end.compact
+      if doc_style == :setext_with_atx
+        headers.map { |h| doc.element_linenumber(h) \
+                      unless doc.header_style(h) == :setext or \
+                        (doc.header_style(h) == :atx and \
+                         h.options[:level] > 2) }.compact
+      else
+        headers.map { |h| doc.element_linenumber(h) \
+                      if doc.header_style(h) != doc_style }.compact
+      end
     end
   end
 end
