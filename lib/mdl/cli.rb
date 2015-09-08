@@ -65,7 +65,7 @@ module MarkdownLint
       :proc => Proc.new { |v| v.split(',') },
       :description => "Specify additional ruleset files to load"
 
-    option :no_default_ruleset,
+    option :skip_default_ruleset,
       :short => '-d',
       :long => '--skip-default-ruleset',
       :boolean => true,
