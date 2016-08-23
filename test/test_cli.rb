@@ -2,6 +2,8 @@ require_relative 'setup_tests'
 require 'open3'
 require 'set'
 require 'fileutils'
+require 'mdl'
+require 'shellwords'
 
 class TestCli < Minitest::Test
   def test_help_text
@@ -196,28 +198,61 @@ class TestCli < Minitest::Test
   private
 
   def run_cli_with_input(args, stdin)
-    run_cmd("#{mdl_script} -c #{default_rc_file} #{args}", stdin)
+    run_directly("-c #{default_rc_file} #{args}", stdin)
   end
 
   def run_cli_without_rc_flag(args)
-    run_cmd("#{mdl_script} #{args}", "")
+    run_directly(args)
   end
 
   def run_cli(args)
-    run_cmd("#{mdl_script} -c #{default_rc_file} #{args}", "")
+    run_directly("-c #{default_rc_file} #{args}")
   end
 
   def run_cli_with_custom_rc_file(args, filename)
-    run_cmd("#{mdl_script} -c #{fixture_rc(filename)} #{args}", "")
+    run_directly("-c #{fixture_rc(filename)} #{args}")
   end
 
   def run_cli_with_file_and_ascii_env(content)
     Tempfile.create('foo') do |f|
       f.write(content)
       f.close
-
-      run_cmd("ruby -E ASCII #{mdl_script} -c #{default_rc_file} #{f.path}", "")
+      begin
+        old_encoding = Encoding.default_external
+        old_verbose = $VERBOSE
+        $VERBOSE = nil
+        Encoding.default_external = Encoding::US_ASCII
+        $VERBOSE = old_verbose
+        run_directly("-c #{default_rc_file} #{f.path}")
+      ensure
+        $VERBOSE = nil
+        Encoding.default_external = old_encoding
+        $VERBOSE = old_verbose
+      end
     end
+  end
+
+  def run_directly(args, stdin = nil)
+    result = {}
+    begin
+      unless stdin.nil?
+        $stdin = StringIO.new(stdin)
+      end
+      $stdout = StringIO.new
+      $stderr = StringIO.new
+      begin
+        MarkdownLint::run(args.shellsplit)
+      rescue SystemExit => e
+        result[:status] = e.status
+      end
+      result[:stdout] = $stdout.string
+      result[:stderr] = $stderr.string
+    ensure
+      $stdout = STDOUT
+      $stderr = STDERR
+      $stdin = STDIN
+    end
+    return result
   end
 
   def run_cmd(command, stdin)

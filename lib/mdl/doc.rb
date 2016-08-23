@@ -52,7 +52,7 @@ module MarkdownLint
 
     def self.new_from_file(filename, ignore_front_matter = false)
       if filename == "-"
-        self.new(STDIN.read, ignore_front_matter)
+        self.new($stdin.read, ignore_front_matter)
       else
         self.new(File.read(filename, encoding: 'UTF-8'), ignore_front_matter)
       end

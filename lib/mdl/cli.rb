@@ -109,6 +109,8 @@ module MarkdownLint
         filename = File.expand_path("~/#{CONFIG_FILE}")
       end
 
+      MarkdownLint::Config.reset
+
       if not filename.nil? and File.exist?(filename)
         MarkdownLint::Config.from_file(filename.to_s)
         if config[:verbose]
