@@ -5,8 +5,8 @@ require 'mdl/kramdown_parser'
 require 'mdl/ruleset'
 require 'mdl/style'
 require 'mdl/version'
+require 'mdl/mini_json'
 
-require 'json'
 require 'kramdown'
 
 module MarkdownLint
@@ -106,7 +106,12 @@ module MarkdownLint
     end
 
     if Config[:json]
-      puts JSON.generate(results)
+      entry = []
+      results.each do |result|
+        ent = MiniJson.generate(result)
+        entry.push ent
+      end
+      puts "[#{entry.join(',')}]"
     elsif status != 0
       puts "\nA detailed description of the rules is available at "\
            "https://github.com/markdownlint/markdownlint/blob/master/docs/RULES.md"
